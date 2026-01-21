@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTML Table Generator for Webflow</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: #f5f5f5;
+      color: #333;
+    }
+
+    h1 {
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 2rem;
+    }
+
+    .input-section {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .input-section h2 {
+      margin-top: 0;
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .tab {
+      padding: 0.5rem 1rem;
+      border: none;
+      background: #e0e0e0;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .tab.active {
+      background: #333;
+      color: white;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    textarea {
+      width: 100%;
+      height: 200px;
+      padding: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      resize: vertical;
+    }
+
+    input[type="file"] {
+      margin-bottom: 1rem;
+    }
+
+    .options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #eee;
+    }
+
+    .option-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .option-group label {
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    .option-group select,
+    .option-group input[type="text"] {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      background: #333;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #555;
+    }
+
+    .btn-secondary {
+      background: #e0e0e0;
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      background: #d0d0d0;
+    }
+
+    .btn-copy {
+      background: #28a745;
+      color: white;
+    }
+
+    .btn-copy:hover {
+      background: #218838;
+    }
+
+    .output-section {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .output-section h2 {
+      margin-top: 0;
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+    }
+
+    .output-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    #html-output {
+      width: 100%;
+      height: 300px;
+      padding: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      background: #f9f9f9;
+      resize: vertical;
+    }
+
+    .preview-container {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 1rem;
+      background: white;
+      overflow-x: auto;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .success-message {
+      color: #28a745;
+      font-size: 0.9rem;
+      margin-left: 1rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .success-message.show {
+      opacity: 1;
+    }
+
+    .help-text {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>HTML Table Generator</h1>
+  <p class="subtitle">Generate responsive HTML tables for Webflow from CSV or pasted data</p>
+
+  <div class="input-section">
+    <h2>Input Data</h2>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="paste">Paste Data</button>
+      <button class="tab" data-tab="csv">Upload CSV</button>
+    </div>
+
+    <div id="paste-tab" class="tab-content active">
+      <textarea id="paste-input" placeholder="Paste your data here...
+
+Example (tab-separated):
+Model	Developer	Release Date
+Claude Opus 4.5	Anthropic	Nov-25
+GPT-5.2	OpenAI	Dec-25
+
+Or comma-separated:
+Model,Developer,Release Date
+Claude Opus 4.5,Anthropic,Nov-25"></textarea>
+      <p class="help-text">Paste tab-separated (from Excel/Sheets) or comma-separated data. First row will be used as headers.</p>
+    </div>
+
+    <div id="csv-tab" class="tab-content">
+      <input type="file" id="csv-file" accept=".csv,.tsv,.txt">
+      <p class="help-text">Upload a CSV or TSV file. First row will be used as headers.</p>
+    </div>
+
+    <div class="options">
+      <div class="option-group">
+        <label for="delimiter">Delimiter</label>
+        <select id="delimiter">
+          <option value="auto">Auto-detect</option>
+          <option value=",">Comma (,)</option>
+          <option value="	">Tab</option>
+          <option value=";">Semicolon (;)</option>
+        </select>
+      </div>
+
+      <div class="option-group">
+        <label for="header-bg">Header Background</label>
+        <input type="text" id="header-bg" value="black" style="width: 100px;">
+      </div>
+
+      <div class="option-group">
+        <label for="header-text">Header Text Color</label>
+        <input type="text" id="header-text" value="white" style="width: 100px;">
+      </div>
+
+      <div class="option-group">
+        <label for="border-color">Border Color</label>
+        <input type="text" id="border-color" value="#e0e0e0" style="width: 100px;">
+      </div>
+
+      <div class="option-group">
+        <label for="cell-padding">Cell Padding</label>
+        <input type="text" id="cell-padding" value="1rem" style="width: 80px;">
+      </div>
+
+      <div class="option-group">
+        <label for="alt-row-color">Alternating Row Color</label>
+        <input type="text" id="alt-row-color" value="#f9f9f9" style="width: 100px;">
+      </div>
+    </div>
+
+    <div style="margin-top: 1.5rem;">
+      <button class="btn btn-primary" onclick="generateTable()">Generate Table</button>
+    </div>
+  </div>
+
+  <div class="output-section">
+    <h2>Output</h2>
+
+    <div class="output-tabs">
+      <button class="tab active" data-output-tab="preview">Preview</button>
+      <button class="tab" data-output-tab="code">HTML Code</button>
+    </div>
+
+    <div id="preview-output" class="output-tab-content active">
+      <div class="preview-container" id="preview"></div>
+    </div>
+
+    <div id="code-output" class="output-tab-content" style="display: none;">
+      <textarea id="html-output" readonly></textarea>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-copy" onclick="copyToClipboard()">Copy HTML</button>
+      <button class="btn btn-secondary" onclick="downloadHTML()">Download HTML</button>
+      <span class="success-message" id="copy-success">Copied to clipboard!</span>
+    </div>
+  </div>
+
+  <script>
+    // Tab switching for input
+    document.querySelectorAll('.tabs .tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab + '-tab').classList.add('active');
+      });
+    });
+
+    // Tab switching for output
+    document.querySelectorAll('.output-tabs .tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.output-tabs .tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.output-tab-content').forEach(c => c.style.display = 'none');
+
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.outputTab + '-output').style.display = 'block';
+      });
+    });
+
+    // CSV file handling
+    document.getElementById('csv-file').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          document.getElementById('paste-input').value = event.target.result;
+          document.querySelector('[data-tab="paste"]').click();
+        };
+        reader.readAsText(file);
+      }
+    });
+
+    function detectDelimiter(text) {
+      const firstLine = text.split('\n')[0];
+      const tabCount = (firstLine.match(/\t/g) || []).length;
+      const commaCount = (firstLine.match(/,/g) || []).length;
+      const semicolonCount = (firstLine.match(/;/g) || []).length;
+
+      if (tabCount >= commaCount && tabCount >= semicolonCount) return '\t';
+      if (semicolonCount > commaCount) return ';';
+      return ',';
+    }
+
+    function parseCSV(text, delimiter) {
+      const rows = [];
+      let currentRow = [];
+      let currentCell = '';
+      let inQuotes = false;
+
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const nextChar = text[i + 1];
+
+        if (inQuotes) {
+          if (char === '"' && nextChar === '"') {
+            currentCell += '"';
+            i++;
+          } else if (char === '"') {
+            inQuotes = false;
+          } else {
+            currentCell += char;
+          }
+        } else {
+          if (char === '"') {
+            inQuotes = true;
+          } else if (char === delimiter) {
+            currentRow.push(currentCell.trim());
+            currentCell = '';
+          } else if (char === '\n' || (char === '\r' && nextChar === '\n')) {
+            currentRow.push(currentCell.trim());
+            if (currentRow.some(cell => cell !== '')) {
+              rows.push(currentRow);
+            }
+            currentRow = [];
+            currentCell = '';
+            if (char === '\r') i++;
+          } else if (char !== '\r') {
+            currentCell += char;
+          }
+        }
+      }
+
+      // Handle last row
+      currentRow.push(currentCell.trim());
+      if (currentRow.some(cell => cell !== '')) {
+        rows.push(currentRow);
+      }
+
+      return rows;
+    }
+
+    function generateTable() {
+      const input = document.getElementById('paste-input').value.trim();
+      if (!input) {
+        alert('Please enter or paste some data first.');
+        return;
+      }
+
+      let delimiter = document.getElementById('delimiter').value;
+      if (delimiter === 'auto') {
+        delimiter = detectDelimiter(input);
+      }
+
+      const rows = parseCSV(input, delimiter);
+      if (rows.length < 2) {
+        alert('Please provide at least a header row and one data row.');
+        return;
+      }
+
+      const headers = rows[0];
+      const dataRows = rows.slice(1);
+
+      const headerBg = document.getElementById('header-bg').value || 'black';
+      const headerText = document.getElementById('header-text').value || 'white';
+      const borderColor = document.getElementById('border-color').value || '#e0e0e0';
+      const cellPadding = document.getElementById('cell-padding').value || '1rem';
+      const altRowColor = document.getElementById('alt-row-color').value || '#f9f9f9';
+
+      let html = `<div style="overflow-x: auto; width: 100%;">
+  <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
+    <thead>
+      <tr style="background-color: ${headerBg}; color: ${headerText};">
+${headers.map((h, i) => `        <th style="padding: ${cellPadding}; text-align: left; font-weight: bold; border-bottom: 2px solid ${borderColor};${i < headers.length - 1 ? ` border-right: 1px solid ${borderColor};` : ''}">${escapeHtml(h)}</th>`).join('\n')}
+      </tr>
+    </thead>
+    <tbody>
+`;
+
+      dataRows.forEach((row, rowIndex) => {
+        // Pad row if needed
+        while (row.length < headers.length) {
+          row.push('');
+        }
+
+        const rowBg = rowIndex % 2 === 1 ? altRowColor : 'white';
+
+        html += `      <tr style="background-color: ${rowBg};">
+${row.map((cell, i) => `        <td style="padding: ${cellPadding}; border-bottom: 1px solid ${borderColor};${i < row.length - 1 ? ` border-right: 1px solid ${borderColor};` : ''} vertical-align: top;">${escapeHtml(cell)}</td>`).join('\n')}
+      </tr>
+`;
+      });
+
+      html += `    </tbody>
+  </table>
+</div>`;
+
+      document.getElementById('html-output').value = html;
+      document.getElementById('preview').innerHTML = html;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function copyToClipboard() {
+      const html = document.getElementById('html-output').value;
+      if (!html) {
+        alert('Generate a table first.');
+        return;
+      }
+
+      navigator.clipboard.writeText(html).then(() => {
+        const msg = document.getElementById('copy-success');
+        msg.classList.add('show');
+        setTimeout(() => msg.classList.remove('show'), 2000);
+      });
+    }
+
+    function downloadHTML() {
+      const html = document.getElementById('html-output').value;
+      if (!html) {
+        alert('Generate a table first.');
+        return;
+      }
+
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'table.html';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
