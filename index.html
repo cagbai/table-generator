@@ -251,7 +251,13 @@ Claude Opus 4.5,Anthropic,Nov-25"></textarea>
           <option value=",">Comma (,)</option>
           <option value="	">Tab</option>
           <option value=";">Semicolon (;)</option>
+          <option value="newline">Line-per-cell (Google Docs)</option>
         </select>
+      </div>
+
+      <div class="option-group" id="columns-group" style="display: none;">
+        <label for="num-columns">Number of Columns</label>
+        <input type="number" id="num-columns" value="3" min="2" max="20" style="width: 60px;">
       </div>
 
       <div class="option-group">
@@ -329,6 +335,12 @@ Claude Opus 4.5,Anthropic,Nov-25"></textarea>
         tab.classList.add('active');
         document.getElementById(tab.dataset.outputTab + '-output').style.display = 'block';
       });
+    });
+
+    // Show/hide columns input based on delimiter selection
+    document.getElementById('delimiter').addEventListener('change', (e) => {
+      const columnsGroup = document.getElementById('columns-group');
+      columnsGroup.style.display = e.target.value === 'newline' ? 'flex' : 'none';
     });
 
     // CSV file handling
@@ -411,11 +423,32 @@ Claude Opus 4.5,Anthropic,Nov-25"></textarea>
       }
 
       let delimiter = document.getElementById('delimiter').value;
-      if (delimiter === 'auto') {
-        delimiter = detectDelimiter(input);
+      let rows;
+
+      if (delimiter === 'newline') {
+        // Line-per-cell mode (Google Docs)
+        const numColumns = parseInt(document.getElementById('num-columns').value) || 3;
+        const lines = input.split('\n').map(line => line.trim()).filter(line => line !== '');
+
+        if (lines.length < numColumns * 2) {
+          alert('Not enough lines for the specified number of columns. Need at least ' + (numColumns * 2) + ' lines (1 header row + 1 data row).');
+          return;
+        }
+
+        rows = [];
+        for (let i = 0; i < lines.length; i += numColumns) {
+          const row = lines.slice(i, i + numColumns);
+          if (row.length === numColumns) {
+            rows.push(row);
+          }
+        }
+      } else {
+        if (delimiter === 'auto') {
+          delimiter = detectDelimiter(input);
+        }
+        rows = parseCSV(input, delimiter);
       }
 
-      const rows = parseCSV(input, delimiter);
       if (rows.length < 2) {
         alert('Please provide at least a header row and one data row.');
         return;
